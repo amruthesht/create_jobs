@@ -3,8 +3,8 @@
 #
 # Copyright (c) 2017 Ben Lindsay <benjlindsay@gmail.com>
 
-from os import popen, makedirs
-from os.path import join, isfile, isdir, basename
+from os import popen, makedirs, walk
+from os.path import join, isfile, isdir, basename, dirname, exists
 import numpy as np
 import pandas as pd
 import time
@@ -93,13 +93,48 @@ def _copy_and_replace_files(file_list, job_dir, param_dict):
     print("Copying files to {} and replacing vars".format(job_dir))
     for input_file in file_list:
         if isinstance(input_file, basestring):
-            from_file = input_file
-            to_file = join(job_dir, basename(input_file))
+            if isdir(input_file):
+                file_list.remove(input_file)
+                dirs = [dirs for root, dirs, files in walk(input_file)]
+                if (dirs[0] != []):
+                    dirs = [(join(input_file, dir), join(basename(input_file), dir)) for dir in dirs[0]]
+                    files += dirs
+                files = [files for root, dirs, files in walk(input_file)]
+                if (files[0] != []):
+                    files = [(join(input_file, file), join(basename(input_file), file)) for file in files[0]]
+                    file_list += files
+                _copy_and_replace_files(file_list, job_dir, param_dict)
+                return
+            elif isfile(input_file):
+                from_file = input_file
+                to_file = join(job_dir, basename(input_file))
+            else:
+                raise ValueError("file_list cannot have non-existent files")
         elif isinstance(input_file, tuple):
-            from_file = input_file[0]
-            to_file = join(job_dir, basename(input_file[1]))
+            if isdir(input_file[0]):
+                file_list.remove(input_file)
+                dirs = [dirs for root, dirs, files in walk(input_file[0])]
+                if (dirs[0] != []):
+                    dirs = [(join(input_file[0], dir), join(input_file[1], dir)) for dir in dirs[0]]
+                    files += dirs
+                files = [files for root, dirs, files in walk(input_file[0])]
+                if (files[0] != []):
+                    files = [(join(input_file[0], file), join(input_file[1], file)) for file in files[0]]
+                    files += files
+                _copy_and_replace_files(file_list, job_dir, param_dict)
+                return
+            elif isfile(input_file[0]):    
+                from_file = input_file[0]
+                to_file = join(job_dir, input_file[1])
+            else:
+                raise ValueError("file_list cannot have tuples such as these (folder, file) or (file, folder)")
+        else:
+            raise ValueError("file_list invalid")
+
         # Replace variables in file names, if any
         from_file = _replace_vars(from_file, param_dict)
+        if not exists(dirname(to_file)):
+            makedirs(dirname(to_file))
         to_file = _replace_vars(to_file, param_dict)
         # Copy file to job_dir with variables in text of file replaced
         with open(from_file, 'r') as f_in, \
