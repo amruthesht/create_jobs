@@ -98,7 +98,7 @@ def _copy_and_replace_files(file_list, job_dir, param_dict):
                 dirs = [dirs for root, dirs, files in walk(input_file)]
                 if (dirs[0] != []):
                     dirs = [(join(input_file, dir), join(basename(input_file), dir)) for dir in dirs[0]]
-                    files += dirs
+                    file_list += dirs
                 files = [files for root, dirs, files in walk(input_file)]
                 if (files[0] != []):
                     files = [(join(input_file, file), join(basename(input_file), file)) for file in files[0]]
@@ -116,11 +116,11 @@ def _copy_and_replace_files(file_list, job_dir, param_dict):
                 dirs = [dirs for root, dirs, files in walk(input_file[0])]
                 if (dirs[0] != []):
                     dirs = [(join(input_file[0], dir), join(input_file[1], dir)) for dir in dirs[0]]
-                    files += dirs
+                    file_list += dirs
                 files = [files for root, dirs, files in walk(input_file[0])]
                 if (files[0] != []):
                     files = [(join(input_file[0], file), join(input_file[1], file)) for file in files[0]]
-                    files += files
+                    file_list += files
                 _copy_and_replace_files(file_list, job_dir, param_dict)
                 return
             elif isfile(input_file[0]):    
