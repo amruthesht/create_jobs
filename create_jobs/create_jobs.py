@@ -66,7 +66,7 @@ def create_jobs(file_list=None, file_copy_list=None, param_table=None, base_dir=
             makedirs(job_dir)
         if not sub_file in file_list:
             file_list.append(sub_file)
-        _copy_files(file_list, job_dir, param_dict)
+        _copy_files(file_copy_list, job_dir)
         _copy_and_replace_files(file_list, job_dir, param_dict)
 
         if submit:
@@ -85,7 +85,7 @@ def _find_sub_prog():
     raise ValueError("Could not find any of the following programs: {}",
                      possible_sub_prog_list)
 
-def _copy_files(file_copy_list, job_dir, param_dict):
+def _copy_files(file_copy_list, job_dir):
     """
     Given a list, `file_copy_list`, whose members are either file paths or
     tuples like `('/path/to/from_file_name', 'to_file_name')` and job directory
@@ -105,7 +105,7 @@ def _copy_files(file_copy_list, job_dir, param_dict):
                 if (files[0] != []):
                     files = [(join(input_file, file), join(basename(input_file), file)) for file in files[0]]
                     file_copy_list += files
-                _copy_files(file_copy_list, job_dir, param_dict)
+                _copy_files(file_copy_list, job_dir)
                 return
             elif isfile(input_file):
                 from_file = input_file
@@ -123,7 +123,7 @@ def _copy_files(file_copy_list, job_dir, param_dict):
                 if (files[0] != []):
                     files = [(join(input_file[0], file), join(input_file[1], file)) for file in files[0]]
                     file_copy_list += files
-                _copy_files(file_copy_list, job_dir, param_dict)
+                _copy_files(file_copy_list, job_dir)
                 return
             elif isfile(input_file[0]):    
                 from_file = input_file[0]
