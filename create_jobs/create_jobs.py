@@ -133,6 +133,8 @@ def _copy_files(file_copy_list, job_dir):
         else:
             raise ValueError("file_copy_list invalid")
 
+        if not exists(dirname(to_file)):
+            makedirs(dirname(to_file))
         # Copy file to job_dir
         with open(from_file, 'r') as f_in, \
                 open(to_file, 'w') as f_out:
