@@ -12,7 +12,7 @@ import sys
 
 usage = (
     "Usage: " +
-    "{} [-h] [-i file_1 [file_2 ...]] [-s sub_file] [-t trials_file] [-n]"
+    "{} [-h] [-i file_1 [file_2 ...]] [-j file_1 [file_2 ...]] [-s sub_file] [-t trials_file] [-n]"
     .format(
         sys.argv[0]
     )
@@ -39,6 +39,27 @@ def parse_i(args):
         if this_file in file_list:
             file_list.remove(this_file)
     return file_list
+
+def parse_j(args):
+    """Parse input file argument '-j'"""
+    if '-j' in args:
+        index = args.index('-j')
+        file_copy_list = []
+        for f in args[index+1:]:
+            if f.startswith('-'):
+                break
+            else:
+                file_copy_list.append(f)
+        if len(file_copy_list) == 0:
+            msg = "Need a list of files after '-j' argument"
+            raise ValueError(msg + '\n' + usage)
+    else:
+        file_copy_list = [f for f in sorted(glob('*')) if not isdir(f)]
+        # Remove this file from file_copy_list if present
+        this_file = basename(sys.argv[0])
+        if this_file in file_copy_list:
+            file_copy_list.remove(this_file)
+    return file_copy_list
 
 
 def parse_s(args):
@@ -82,6 +103,9 @@ def main(args):
     # Parse input file argument '-i'
     file_list = parse_i(args)
 
+    # Parse input file argument '-j'
+    file_copy_list = parse_i(args)
+
     # Parse submit file argument '-s'
     sub_file = parse_s(args)
 
@@ -104,7 +128,7 @@ def main(args):
 
 
     # Run command
-    create_jobs(file_list, trials_file, sub_file=sub_file, submit=submit)
+    create_jobs(file_list, file_copy_list, trials_file, sub_file=sub_file, submit=submit)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ _PY2 = sys.version_info[0] == 2
 if not _PY2:
     basestring = str
 
-def create_jobs(file_list=None, param_table=None, base_dir='.',
+def create_jobs(file_list=None, file_copy_list=None, param_table=None, base_dir='.',
                 table_sep='\s+', sub_file='sub.sh', sub_prog=None,
                 sleep_time=0, submit=True):
     """
@@ -66,7 +66,9 @@ def create_jobs(file_list=None, param_table=None, base_dir='.',
             makedirs(job_dir)
         if not sub_file in file_list:
             file_list.append(sub_file)
+        _copy_files(file_list, job_dir, param_dict)
         _copy_and_replace_files(file_list, job_dir, param_dict)
+
         if submit:
             sub_file = _replace_vars(sub_file, param_dict)
             _submit_job(job_dir, sub_file, sleep_time, sub_prog)
@@ -82,6 +84,60 @@ def _find_sub_prog():
             return prog
     raise ValueError("Could not find any of the following programs: {}",
                      possible_sub_prog_list)
+
+def _copy_files(file_copy_list, job_dir, param_dict):
+    """
+    Given a list, `file_copy_list`, whose members are either file paths or
+    tuples like `('/path/to/from_file_name', 'to_file_name')` and job directory
+    `job_dir`, copies the files to the job directory and replaces
+    variables in those files and in the file names.
+    """
+    print("Copying files to {} and replacing vars".format(job_dir))
+    for input_file in file_copy_list:
+        if isinstance(input_file, basestring):
+            if isdir(input_file):
+                file_copy_list.remove(input_file)
+                dirs = [dirs for root, dirs, files in walk(input_file)]
+                if (dirs[0] != []):
+                    dirs = [(join(input_file, dir), join(basename(input_file), dir)) for dir in dirs[0]]
+                    file_copy_list += dirs
+                files = [files for root, dirs, files in walk(input_file)]
+                if (files[0] != []):
+                    files = [(join(input_file, file), join(basename(input_file), file)) for file in files[0]]
+                    file_copy_list += files
+                _copy_files(file_copy_list, job_dir, param_dict)
+                return
+            elif isfile(input_file):
+                from_file = input_file
+                to_file = join(job_dir, basename(input_file))
+            else:
+                raise ValueError("file_copy_list cannot have non-existent files")
+        elif isinstance(input_file, tuple):
+            if isdir(input_file[0]):
+                file_copy_list.remove(input_file)
+                dirs = [dirs for root, dirs, files in walk(input_file[0])]
+                if (dirs[0] != []):
+                    dirs = [(join(input_file[0], dir), join(input_file[1], dir)) for dir in dirs[0]]
+                    file_copy_list += dirs
+                files = [files for root, dirs, files in walk(input_file[0])]
+                if (files[0] != []):
+                    files = [(join(input_file[0], file), join(input_file[1], file)) for file in files[0]]
+                    file_copy_list += files
+                _copy_files(file_copy_list, job_dir, param_dict)
+                return
+            elif isfile(input_file[0]):    
+                from_file = input_file[0]
+                to_file = join(job_dir, input_file[1])
+            else:
+                raise ValueError("file_copy_list cannot have tuples such as these (folder, file) or (file, folder)")
+        else:
+            raise ValueError("file_copy_list invalid")
+
+        # Copy file to job_dir
+        with open(from_file, 'r') as f_in, \
+                open(to_file, 'w') as f_out:
+            text = f_in.read()
+            f_out.write(text)
 
 def _copy_and_replace_files(file_list, job_dir, param_dict):
     """
