@@ -12,7 +12,7 @@ import sys
 
 usage = (
     "Usage: " +
-    "{} [-h] [-i file_1 [file_2 ...]] [-j file_1 [file_2 ...]] [-s sub_file] [-t trials_file] [-n]"
+    "{} [-h] [-i file_1 [file_2 ...]] [-j file_1 [file_2 ...]] [-k file_1 [file_2 ...]] [-s sub_file] [-t trials_file] [-n]"
     .format(
         sys.argv[0]
     )
@@ -61,6 +61,27 @@ def parse_j(args):
             file_copy_list.remove(this_file)
     return file_copy_list
 
+def parse_k(args):
+    """Parse input file argument '-k'"""
+    if '-k' in args:
+        index = args.index('-k')
+        file_common_test = []
+        for f in args[index+1:]:
+            if f.startswith('-'):
+                break
+            else:
+                file_common_test.append(f)
+        if len(file_common_test) == 0:
+            msg = "Need a list of files after '-k' argument"
+            raise ValueError(msg + '\n' + usage)
+    else:
+        file_common_test = [f for f in sorted(glob('*')) if not isdir(f)]
+        # Remove this file from file_common_test if present
+        this_file = basename(sys.argv[0])
+        if this_file in file_common_test:
+            file_common_test.remove(this_file)
+    return file_common_test
+
 
 def parse_s(args):
     """Parse submit file argument '-s'"""
@@ -104,7 +125,10 @@ def main(args):
     file_list = parse_i(args)
 
     # Parse input file argument '-j'
-    file_copy_list = parse_i(args)
+    file_copy_list = parse_j(args)
+
+    # Parse input file argument '-k'
+    file_common_list = parse_k(args)
 
     # Parse submit file argument '-s'
     sub_file = parse_s(args)

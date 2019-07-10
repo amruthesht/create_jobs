@@ -15,7 +15,7 @@ _PY2 = sys.version_info[0] == 2
 if not _PY2:
     basestring = str
 
-def create_jobs(file_list=None, file_copy_list=None, param_table=None, base_dir='.',
+def create_jobs(file_list=None, file_copy_list=None, file_common_list=None, param_table=None, base_dir='.',
                 table_sep='\s+', sub_file='sub.sh', sub_prog=None,
                 sleep_time=0, submit=True):
     """
@@ -72,6 +72,7 @@ def create_jobs(file_list=None, file_copy_list=None, param_table=None, base_dir=
         if submit:
             sub_file = _replace_vars(sub_file, param_dict)
             _submit_job(job_dir, sub_file, sleep_time, sub_prog)
+    _copy_files(file_common_list, base_dir)
 
 def _find_sub_prog():
     """
