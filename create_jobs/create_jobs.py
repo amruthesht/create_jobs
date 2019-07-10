@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2017 Ben Lindsay <benjlindsay@gmail.com>
 
-from os import popen, makedirs, walk
+from os import popen, makedirs, walk, system
 from os.path import join, isfile, isdir, basename, dirname, exists
 import numpy as np
 import pandas as pd
@@ -93,7 +93,7 @@ def _copy_files(file_copy_list, job_dir):
     `job_dir`, copies the files to the job directory and replaces
     variables in those files and in the file names.
     """
-    print("Copying files to {} and replacing vars".format(job_dir))
+    print("Copying files/ folders to {}".format(job_dir))
     for input_file in file_copy_list:
         if isinstance(input_file, basestring):
             if isdir(input_file):
@@ -137,10 +137,11 @@ def _copy_files(file_copy_list, job_dir):
         if not exists(dirname(to_file)):
             makedirs(dirname(to_file))
         # Copy file to job_dir
-        with open(from_file, 'r') as f_in, \
+        system("cp " + from_file + " " + to_file)
+        """ with open(from_file, 'r') as f_in, \
                 open(to_file, 'w') as f_out:
             text = f_in.read()
-            f_out.write(text)
+            f_out.write(text) """
 
 def _copy_and_replace_files(file_list, job_dir, param_dict):
     """
@@ -149,7 +150,7 @@ def _copy_and_replace_files(file_list, job_dir, param_dict):
     `job_dir`, copies the files to the job directory and replaces
     variables in those files and in the file names.
     """
-    print("Copying files to {} and replacing vars".format(job_dir))
+    print("Copying files/ folders to {} and replacing vars".format(job_dir))
     for input_file in file_list:
         if isinstance(input_file, basestring):
             if isdir(input_file):
