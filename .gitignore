@@ -1,3 +1,5 @@
 dist/
 *.pyc
 upload_to_pypi.sh
+create_jobs.egg-info/
+*.code-workspace
