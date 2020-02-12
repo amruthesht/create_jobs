@@ -16,7 +16,7 @@ if not _PY2:
     basestring = str
 
 def create_jobs(file_list=None, file_copy_list=None, file_common_list=None, param_table=None, base_dir='.',
-                table_sep='\s+', sub_file='sub.sh', sub_prog=None,
+                table_sep='\s+', sub_file='sub.sh', sub_prog=None, sub_cluster='rrlogin', command_file='commandlines',
                 sleep_time=0, submit=True):
     """
     Recursively generate the directory tree specified by values in files or
@@ -55,6 +55,9 @@ def create_jobs(file_list=None, file_copy_list=None, file_common_list=None, para
         else:
             param_df['JOB_NAME'] = param_df[job_name_col]
 
+    if 'stampede' in sub_cluster:
+        sub_file_object = open(command_file, 'w')
+
     # Iterate over rows of dataframe, creating and submitting jobs
     param_dict_list = param_df.to_dict(orient='records')
     for param_dict in param_dict_list:
@@ -64,15 +67,26 @@ def create_jobs(file_list=None, file_copy_list=None, file_common_list=None, para
             continue
         else:
             makedirs(job_dir)
-        if not sub_file in file_list:
-            file_list.append(sub_file)
+        if 'stampede' in sub_cluster:
+            sub_cmd = 'cd ' + job_dir + '; ' + str(param_dict['submit_command']) + '; cd -' + "\n"
+            sub_file_object.write(sub_cmd)
+        else:
+            if not sub_file in file_list:
+                file_list.append(sub_file)
         _copy_files(file_copy_list, job_dir)
         _copy_and_replace_files(file_list, job_dir, param_dict)
 
-        if submit:
-            sub_file = _replace_vars(sub_file, param_dict)
-            _submit_job(job_dir, sub_file, sleep_time, sub_prog)
+        if 'stampede' not in sub_cluster:
+            if submit:
+                sub_file = _replace_vars(sub_file, param_dict)
+                _submit_job(job_dir, sub_file, sleep_time, sub_prog)
     _copy_files(file_common_list, base_dir)
+
+    if 'stampede' in sub_cluster:
+        sub_file_dict = {"JOB_NAME": "fire", "n_jobs": len(dict) + 1}
+        sub_file = _replace_vars(sub_file, sub_file_dict)
+        _submit_job(dirname(sub_file), sub_file, sleep_time, sub_prog)
+        sub_file_object.close()
 
 def _find_sub_prog():
     """
